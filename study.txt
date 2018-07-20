@@ -21,3 +21,6 @@ https://blog.csdn.net/anzhsoft/article/details/21603479
 
 RabbitMQ之消息确认机制
 http://baijiahao.baidu.com/s?id=1604438957587131228&wfr=spider&for=pc
+
+消息发布确认
+https://www.cnblogs.com/wangzhongqiu/p/7815529.html

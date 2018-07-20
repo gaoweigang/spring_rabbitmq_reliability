@@ -1,4 +1,4 @@
-package com.gwg.demo.common;
+package com.gwg.demo.mq.common;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

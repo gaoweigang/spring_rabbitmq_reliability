@@ -1,4 +1,4 @@
-package com.gwg.demo.util;
+package com.gwg.demo.mq.common;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -7,9 +7,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.gwg.demo.common.Constants;
-import com.gwg.demo.common.DetailRes;
-import com.gwg.demo.common.MessageWithTime;
+import com.gwg.demo.mq.common.Constants;
+import com.gwg.demo.mq.common.DetailRes;
+import com.gwg.demo.mq.common.MessageWithTime;
 
 import lombok.extern.slf4j.Slf4j;
 

@@ -1,7 +1,7 @@
-package com.gwg.demo.util;
+package com.gwg.demo.mq.common;
 
-import com.gwg.demo.common.DetailRes;
-import com.gwg.demo.common.MessageWithTime;
+import com.gwg.demo.mq.common.DetailRes;
+import com.gwg.demo.mq.common.MessageWithTime;
 
 /**
  * 

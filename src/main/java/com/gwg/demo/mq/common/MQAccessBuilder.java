@@ -1,4 +1,4 @@
-package com.gwg.demo.util;
+package com.gwg.demo.mq.common;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
@@ -16,9 +16,10 @@ import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 
 import com.alibaba.fastjson.JSON;
-import com.gwg.demo.common.Constants;
-import com.gwg.demo.common.DetailRes;
-import com.gwg.demo.common.MessageWithTime;
+import com.gwg.demo.mq.common.Constants;
+import com.gwg.demo.mq.common.DetailRes;
+import com.gwg.demo.mq.common.MessageWithTime;
+import com.gwg.demo.mq.consumer.process.MessageProcess;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ConsumerCancelledException;
@@ -50,6 +51,7 @@ public class MQAccessBuilder {
 		return buildMessageSender(exchange, routingKey, null, "topic");
 	}
 
+	/***************************通过发送确定的方式确保数据发送broker**********************************************************************/
 	// 1 构造template, exchange, routingkey等
 	// 2 设置message序列化方法
 	// 3 设置发送确认,确认消息有没有发送到broker代理服务器上
@@ -60,8 +62,8 @@ public class MQAccessBuilder {
 		Connection connection = connectionFactory.createConnection();
 		// 1
 		if (type.equals("direct")) {
-			logger.info("buildMessageSender 创建交换器和队列 start .....");
-			//buildQueue(exchange, routingKey, queue, connection, "direct");
+			logger.info("buildMessageSender 构造交换器和队列 ，并将交换器和队列绑定 start .....");
+			buildQueue(exchange, routingKey, queue, connection, "direct");
 		} else if (type.equals("topic")) {
 			buildTopic(exchange, connection);
 		}
@@ -76,22 +78,21 @@ public class MQAccessBuilder {
 		rabbitTemplate.setMessageConverter(new Jackson2JsonMessageConverter());
 		RetryCache retryCache = new RetryCache();
 
-		/*
-		 * 3.
-		 */
-		logger.info("设置发送确认,确认消息有没有发送到broker代理服务器上.....");
+		//3.
+		logger.info("设置发送确认,确认消息有没有路由到exchange,不管有没有路由到exchange上，都会回调该方法.....");
 		rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
 			logger.info("发送消息确认, correlationData:{}, ack:{},cause:{}", JSON.toJSON(correlationData), ack, cause);
 			if (!ack) {
 				logger.info("send message failed: " + cause + correlationData.toString());
 			} else {
-				//在收到确认消息后 删除本地缓存消息
 				logger.info("producer在收到确认消息后，删除本地缓存,correlationData:{}", JSON.toJSON(correlationData));
+				//消息路由到exhange成功，删除本地缓存，我们发送的每条消息都会与correlationData相关，而correlationData中的id是我们自己指定的
 				retryCache.del(Long.valueOf(correlationData.getId()));
 			}
 		});
-
-		//只有在消息发送失败了才会调用吗
+		
+		//3.1
+		logger.info("确定消息有没有路由到queue,只有在消息从exchange路由到queue失败时候，才会调用该方法....");
 		rabbitTemplate.setMandatory(true);
 		rabbitTemplate.setReturnCallback((message, replyCode, replyText, tmpExchange, tmpRoutingKey) -> {
 			logger.info("ReturnCallback start ....");
@@ -102,6 +103,7 @@ public class MQAccessBuilder {
 			}
 
 			logger.info("send message failed: " + replyCode + " " + replyText);
+			//消息路由到queue失败，重发
 			rabbitTemplate.send(message);
 		});
 
@@ -123,10 +125,13 @@ public class MQAccessBuilder {
 			@Override
 			public DetailRes send(MessageWithTime messageWithTime) {
 				try {
+					logger.info("在发送消息之前，先将消息进行本地缓存....");
 					retryCache.add(messageWithTime);
+					//将消息与CorrelationData关联，并发送
 					rabbitTemplate.correlationConvertAndSend(messageWithTime.getMessage(),
 							new CorrelationData(String.valueOf(messageWithTime.getId())));
 				} catch (Exception e) {
+					logger.error("将消息丢mq失败，异常：{}", e.getMessage());
 					return new DetailRes(false, "");
 				}
 
@@ -154,8 +159,8 @@ public class MQAccessBuilder {
 			final MessageProcess<T> messageProcess, String type) throws IOException {
 		final Connection connection = connectionFactory.createConnection();
 
-		// 1
-		//buildQueue(exchange, routingKey, queue, connection, type);
+		//1
+		buildQueue(exchange, routingKey, queue, connection, type);
 
 		// 2
 		final MessagePropertiesConverter messagePropertiesConverter = new DefaultMessagePropertiesConverter();

@@ -1,6 +1,6 @@
-package com.gwg.demo.util;
+package com.gwg.demo.mq.consumer.process;
 
-import com.gwg.demo.common.DetailRes;
+import com.gwg.demo.mq.common.DetailRes;
 
 /**
  * Created

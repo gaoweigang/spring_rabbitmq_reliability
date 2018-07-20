@@ -1,4 +1,4 @@
-package com.gwg.demo.common;
+package com.gwg.demo.mq.common;
 
 /**
  * Created by littlersmall on 16/5/19.
