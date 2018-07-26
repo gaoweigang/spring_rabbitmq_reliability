@@ -23,7 +23,6 @@ public class UserConsumerExample {
 	@Qualifier("userMessageConsumer")
     private MessageConsumer messageConsumer;
 
-	@RabbitListener(queues = "${rabbitmq.user.queue}")
     public void consume() {
 		logger.info("用户消息消费 start .....");
         DetailRes result = messageConsumer.consume();
